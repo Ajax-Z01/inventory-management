@@ -34,4 +34,15 @@ const authorizeRoles = (...allowedRoles) => {
   };
 };
 
-module.exports = { authenticateUser, authorizeRoles };
+// Middleware specifically for admin authorization
+const authorizeAdmin = (req, res, next) => {
+  const { role } = req.user;
+
+  if (role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: Admin access required' });
+  }
+
+  next();
+};
+
+module.exports = { authenticateUser, authorizeRoles, authorizeAdmin };

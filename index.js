@@ -2,6 +2,7 @@ const express = require('express');
 const firebaseAdmin = require('firebase-admin');
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
 
 const serviceAccount = require('./serviceAccountKey.json');
 firebaseAdmin.initializeApp({
@@ -17,17 +18,7 @@ app.get('/', (req, res) => {
   res.send('Inventory Management System API is running');
 });
 
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
-
-const productRoutes = require('./routes/productRoutes');
-app.use('/api/products', productRoutes);
-
-const categoriesRouter = require('./routes/categoryRoutes');
-app.use('/api/categories', categoriesRouter);
-
-const stockRoutes = require('./routes/stockRoutes');
-app.use('/api/stocks', stockRoutes);
+require('./routes')(app);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
