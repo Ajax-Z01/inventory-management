@@ -1,13 +1,13 @@
 const { validationResult } = require('express-validator');
-const db = require('firebase-admin').firestore();
+const categoryModel = require('../models/categoryModel');
 
 // Get all categories
 const getCategories = async (req, res) => {
   try {
-    const snapshot = await db.collection('categories').get();
-    const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const categories = await categoryModel.getAllCategories();
     res.json(categories);
   } catch (error) {
+    console.error('Error getting categories:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -21,8 +21,8 @@ const addCategory = async (req, res) => {
 
   try {
     const newCategory = req.body;
-    const docRef = await db.collection('categories').add(newCategory);
-    res.status(201).json({ id: docRef.id });
+    const id = await categoryModel.addCategory(newCategory);
+    res.status(201).json({ id });
   } catch (error) {
     console.error('Error creating category:', error);
     res.status(500).json({ message: error.message });
@@ -39,7 +39,7 @@ const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedCategory = req.body;
-    await db.collection('categories').doc(id).update(updatedCategory);
+    await categoryModel.updateCategory(id, updatedCategory);
     res.json({ message: 'Category updated' });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -51,7 +51,7 @@ const updateCategory = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.collection('categories').doc(id).delete();
+    await categoryModel.deleteCategory(id);
     res.json({ message: 'Category deleted' });
   } catch (error) {
     console.error('Error deleting category:', error);

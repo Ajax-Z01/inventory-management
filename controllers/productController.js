@@ -1,18 +1,18 @@
 const { validationResult } = require('express-validator');
-const db = require('firebase-admin').firestore();
+const productModel = require('../models/productModel');
+const ProductDTO = require('../dtos/productDTO');
 
 // Get all products
 const getProducts = async (req, res) => {
   try {
-    const snapshot = await db.collection('products').get();
-    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const products = await productModel.getProducts();
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Add new product
+// Add a new product
 const addProduct = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -21,15 +21,19 @@ const addProduct = async (req, res) => {
 
   try {
     const newProduct = req.body;
-    const docRef = await db.collection('products').add(newProduct);
-    res.status(201).json({ id: docRef.id });
+    if (!ProductDTO.validate(newProduct)) {
+      return res.status(400).json({ message: 'Invalid product data' });
+    }
+
+    const productId = await productModel.addProduct(newProduct);
+    res.status(201).json({ id: productId });
   } catch (error) {
     console.error('Error creating product:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Update product
+// Update a product
 const updateProduct = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -39,7 +43,12 @@ const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedProduct = req.body;
-    await db.collection('products').doc(id).update(updatedProduct);
+
+    if (!ProductDTO.validate(updatedProduct)) {
+      return res.status(400).json({ message: 'Invalid product data' });
+    }
+
+    await productModel.updateProduct(id, updatedProduct);
     res.json({ message: 'Product updated' });
   } catch (error) {
     console.error('Error updating product:', error);
@@ -47,11 +56,11 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Delete product
+// Delete a product
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    await db.collection('products').doc(id).delete();
+    await productModel.deleteProduct(id);
     res.json({ message: 'Product deleted' });
   } catch (error) {
     console.error('Error deleting product:', error);
