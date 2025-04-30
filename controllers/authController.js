@@ -32,15 +32,34 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Get user profile
+// Middleware to verify Firebase ID token
+const authenticateUser = async (req, res, next) => {
+  const idToken = req.headers.authorization && req.headers.authorization.split('Bearer ')[1];
+  
+  if (!idToken) {
+    return res.status(403).json({ message: 'No token provided' });
+  }
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;  // Attach user data to request
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+};
+
+// Get user profile with role from custom claims
 const getUserProfile = async (req, res) => {
   try {
-    const user = req.user; // Decoded token from authenticateUser middleware
+    const decoded = req.user;
+    const userRecord = await admin.auth().getUser(decoded.uid);
+
     res.json({
-      uid: user.uid,
-      email: user.email,
-      role: user.role, // Role stored in custom claims
-      name: user.name || '',
+      uid: userRecord.uid,
+      email: userRecord.email,
+      displayName: userRecord.displayName || '',
+      role: decoded.role || '',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -20,12 +20,16 @@ const addProduct = async (req, res) => {
   }
 
   try {
-    const newProduct = req.body;
-    if (!ProductDTO.validate(newProduct)) {
+    const newProductData = req.body;
+
+    if (!ProductDTO.validate(newProductData)) {
       return res.status(400).json({ message: 'Invalid product data' });
     }
 
-    const productId = await productModel.addProduct(newProduct);
+    const newProduct = new ProductDTO(newProductData.name, newProductData.price, newProductData.stock, newProductData.categoryId);
+    const transformedProduct = ProductDTO.transformToFirestore(newProduct);
+
+    const productId = await productModel.addProduct(transformedProduct);
     res.status(201).json({ id: productId });
   } catch (error) {
     console.error('Error creating product:', error);
@@ -42,13 +46,16 @@ const updateProduct = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const updatedProduct = req.body;
+    const updatedProductData = req.body;
 
-    if (!ProductDTO.validate(updatedProduct)) {
+    if (!ProductDTO.validate(updatedProductData)) {
       return res.status(400).json({ message: 'Invalid product data' });
     }
 
-    await productModel.updateProduct(id, updatedProduct);
+    const updatedProduct = new ProductDTO(updatedProductData.name, updatedProductData.price, updatedProductData.stock, updatedProductData.categoryId);
+    const transformedProduct = ProductDTO.transformToFirestore(updatedProduct);
+
+    await productModel.updateProduct(id, transformedProduct);
     res.json({ message: 'Product updated' });
   } catch (error) {
     console.error('Error updating product:', error);
